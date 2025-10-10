@@ -1,127 +1,32 @@
-diff --color -uNr a/fs/dcache.c b/fs/dcache.c
---- a/fs/dcache.c	2025-10-09 13:59:42.000000000 +0800
-+++ b/fs/dcache.c	2025-10-10 01:52:25.821373415 +0800
-@@ -31,6 +31,9 @@
- #include <linux/bit_spinlock.h>
- #include <linux/rculist_bl.h>
- #include <linux/list_lru.h>
-+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+diff --color -uNr a/fs/proc/cmdline.c b/fs/proc/cmdline.c
+--- a/fs/proc/cmdline.c	2025-10-10 09:06:56.000000000 +0800
++++ b/fs/proc/cmdline.c	2025-10-10 17:37:21.507846784 +0800
+@@ -3,6 +3,9 @@
+ #include <linux/init.h>
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 +#include <linux/susfs_def.h>
 +#endif
- #include "internal.h"
- #include "mount.h"
- 
-@@ -2217,6 +2220,11 @@
- 			continue;
- 		if (dentry_cmp(dentry, str, hashlen_len(hashlen)) != 0)
- 			continue;
+ #ifdef CONFIG_INITRAMFS_IGNORE_SKIP_FLAG
+ #include <asm/setup.h>
+ #endif
+@@ -32,6 +35,11 @@
+ #ifdef CONFIG_INITRAMFS_IGNORE_SKIP_FLAG
+ 	seq_puts(m, proc_command_line);
+ #else
 +#ifdef CONFIG_KSU_SUSFS_SUS_PATH
 +			if (dentry->d_inode && unlikely(dentry->d_inode->i_state & INODE_STATE_SUS_PATH) && likely(current->susfs_task_state & TASK_STRUCT_NON_ROOT_USER_APP_PROC)) {
 +				continue;
 +			}
 +#endif
- 		*seqp = seq;
- 		return dentry;
- 	}
-@@ -2299,6 +2307,12 @@
- 		if (dentry->d_name.hash != hash)
- 			continue;
- 
-+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-+		if (dentry->d_inode && unlikely(dentry->d_inode->i_state & INODE_STATE_SUS_PATH) && likely(current->susfs_task_state & TASK_STRUCT_NON_ROOT_USER_APP_PROC)) {
-+			continue;
-+		}
-+#endif
-+
- 		spin_lock(&dentry->d_lock);
- 		if (dentry->d_parent != parent)
- 			goto next;
-diff --color -uNr a/fs/proc/cmdline.c b/fs/proc/cmdline.c
---- a/fs/proc/cmdline.c	2025-10-09 13:59:36.000000000 +0800
-+++ b/fs/proc/cmdline.c	2025-10-10 01:54:40.673373364 +0800
-@@ -3,6 +3,9 @@
- #include <linux/init.h>
- #include <linux/proc_fs.h>
- #include <linux/seq_file.h>
-+#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
-+extern int susfs_spoof_cmdline_or_bootconfig(struct seq_file *m);
-+#endif
- #ifdef CONFIG_INITRAMFS_IGNORE_SKIP_FLAG
- #include <asm/setup.h>
- #endif
-@@ -32,6 +35,12 @@
- #ifdef CONFIG_INITRAMFS_IGNORE_SKIP_FLAG
- 	seq_puts(m, proc_command_line);
- #else
-+#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
-+	if (!susfs_spoof_cmdline_or_bootconfig(m)) {
-+		seq_putc(m, '\n');
-+		return 0;
-+	}
-+#endif
  	seq_puts(m, saved_command_line);
  #endif
  	seq_putc(m, '\n');
-diff --color -uNr a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
---- a/fs/proc/task_mmu.c	2025-10-10 01:53:55.000000000 +0800
-+++ b/fs/proc/task_mmu.c	2025-10-10 01:57:54.765373289 +0800
-@@ -21,6 +21,9 @@
- #include <linux/pkeys.h>
- #include <linux/mm_inline.h>
- #include <linux/ctype.h>
-+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+#include <linux/susfs_def.h>
-+#endif
- 
- #include <asm/elf.h>
- #include <asm/tlb.h>
-@@ -354,6 +357,10 @@
- 	seq_putc(m, ' ');
- }
- 
-+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+extern void susfs_sus_ino_for_show_map_vma(unsigned long ino, dev_t *out_dev, unsigned long *out_ino);
-+#endif
-+
- static void
- show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
- {
-@@ -368,8 +375,17 @@
- 
- 	if (file) {
- 		struct inode *inode = file_inode(vma->vm_file);
-+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+		if (unlikely(inode->i_state & INODE_STATE_SUS_KSTAT)) {
-+			susfs_sus_ino_for_show_map_vma(inode->i_ino, &dev, &ino);
-+			goto bypass_orig_flow;
-+		}
-+#endif
- 		dev = inode->i_sb->s_dev;
- 		ino = inode->i_ino;
-+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-+bypass_orig_flow:
-+#endif
- 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
- 	}
- 
 diff --color -uNr a/include/linux/sched.h b/include/linux/sched.h
---- a/include/linux/sched.h	2025-10-09 13:59:42.000000000 +0800
-+++ b/include/linux/sched.h	2025-10-10 01:37:46.837373750 +0800
-@@ -1500,18 +1500,35 @@
- 	ANDROID_KABI_RESERVE(3);
- 	ANDROID_KABI_RESERVE(4);
- 	ANDROID_KABI_RESERVE(5);
--	ANDROID_KABI_RESERVE(6);
-+#if defined(CONFIG_KSU_SUSFS)
-+	ANDROID_KABI_USE(6, u64 susfs_task_state);
- #else
-+ 	ANDROID_KABI_RESERVE(6);
-+#endif // #if defined(CONFIG_KSU_SUSFS)
-+#else
-+#if defined(CONFIG_KSU_SUSFS)
-+	u64 susfs_task_state;
-+#endif
- 	struct mutex			futex_exit_mutex;
+--- a/include/linux/sched.h	2025-10-10 09:07:04.000000000 +0800
++++ b/include/linux/sched.h	2025-10-10 17:41:20.877670026 +0800
+@@ -1513,12 +1513,22 @@
  #endif
  
  	ANDROID_KABI_RESERVE(7);

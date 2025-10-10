@@ -1,6 +1,6 @@
 diff --color -uNr a/fs/proc/cmdline.c b/fs/proc/cmdline.c
 --- a/fs/proc/cmdline.c	2025-10-10 09:06:56.000000000 +0800
-+++ b/fs/proc/cmdline.c	2025-10-10 17:37:21.507846784 +0800
++++ b/fs/proc/cmdline.c	2025-10-10 17:37:21.000000000 +0800
 @@ -3,6 +3,9 @@
  #include <linux/init.h>
  #include <linux/proc_fs.h>
@@ -23,9 +23,22 @@ diff --color -uNr a/fs/proc/cmdline.c b/fs/proc/cmdline.c
  	seq_puts(m, saved_command_line);
  #endif
  	seq_putc(m, '\n');
+diff --color -uNr a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
+--- a/fs/proc/task_mmu.c	2025-10-10 09:07:04.000000000 +0800
++++ b/fs/proc/task_mmu.c	2025-10-11 00:32:18.370583303 +0800
+@@ -21,6 +21,9 @@
+ #include <linux/pkeys.h>
+ #include <linux/mm_inline.h>
+ #include <linux/ctype.h>
++#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++#include <linux/susfs_def.h>
++#endif
+ 
+ #include <asm/elf.h>
+ #include <asm/tlb.h>
 diff --color -uNr a/include/linux/sched.h b/include/linux/sched.h
 --- a/include/linux/sched.h	2025-10-10 09:07:04.000000000 +0800
-+++ b/include/linux/sched.h	2025-10-10 17:41:20.877670026 +0800
++++ b/include/linux/sched.h	2025-10-10 17:41:20.000000000 +0800
 @@ -1513,12 +1513,22 @@
  #endif
  

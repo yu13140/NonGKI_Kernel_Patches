@@ -1,0 +1,12 @@
+diff --color -uNr a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
+--- a/fs/proc/task_mmu.c	2025-10-27 10:12:10.000000000 +0800
++++ b/fs/proc/task_mmu.c	2025-10-27 10:49:08.000000000 +0800
+@@ -21,7 +21,7 @@
+ #include <linux/pkeys.h>
+ #include <linux/mm_inline.h>
+ #include <linux/ctype.h>
+-#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
++#if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP)
+ #include <linux/susfs_def.h>
+ #endif
+ 
